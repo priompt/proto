@@ -1,37 +1,96 @@
 # priompt proto
 
-**The shared contracts and engines — the single source of truth.**
-This repo is the one place shared code lives; no other repo carries a copy
-that can drift:
+**The rulebook of Priompt.** Everything the family of repos must *agree* on —
+what the API looks like, what a token claims, what makes a prompt valid, how
+an edit's meaning is measured — is defined once, in this repo, and imported
+everywhere else. No other repo carries a copy that can drift.
 
-- `proto/priompt/v1/prompt.proto` — the `PromptService` gRPC API the server
-  implements and every client speaks (+ generated Go stubs in `gen/`).
-- `claims/` — the JWT claims contract between the priompt-auth issuer and the
-  core server's verifier.
-- `validate/` — prompt well-formedness: the one definition of "valid",
-  enforced by the server on write and serve, and by promptctl on commit.
-- `semdiff/` — the semantic propagation diff engine, used by the server
-  (publish/diff RPCs) and promptctl (local diff) alike.
+## The 30-second version
 
-| Consumer | How it uses this repo |
-| --- | --- |
-| **priompt** (server) | imports the generated Go stubs: `priomptproto/gen/priompt/v1` |
-| **cli** (`promptctl`) | same Go stubs |
-| **python-sdk** | its `buf.gen.yaml` reads `../proto/proto` and generates `priompt/v1/prompt_pb2*.py` in-package |
-| **js-sdk** | vendors the `.proto` file at publish time (`npm run sync-proto`) and loads it at runtime — no codegen |
-| **auth** (issuer) | imports `priomptproto/claims` — the same Claims type the server's verifier uses |
+A gRPC project lives or dies by one thing: the server and every SDK speaking
+the *same* contract. The moment each repo keeps its own copy of the `.proto`,
+someone adds a field on one side, forgets the other, and clients break in ways
+no test catches. The same failure mode applies to any hand-synced code — this
+family had a storage engine drift exactly that way before this repo existed.
 
-## Regenerating
+So the shared things live here, and there is exactly one of each:
 
-Requires [buf](https://buf.build/docs/installation) — remote plugins, no protoc:
-
-```sh
-buf generate        # writes gen/priompt/v1/*.pb.go (committed)
+```mermaid
+flowchart TD
+    subgraph This["📖 This repo (module priomptproto)"]
+        P["proto/priompt/v1/prompt.proto<br/>the PromptService contract"]
+        G["gen/<br/>generated Go stubs"]
+        C["claims/<br/>JWT claims contract"]
+        V["validate/<br/>what makes a prompt valid"]
+        S["semdiff/<br/>the semantic diff engine"]
+    end
+    CORE["🗄️ priompt server"] -->|imports| This
+    CLI["✍️ promptctl"] -->|imports| This
+    AUTH["🪪 priompt-auth"] -->|"imports claims/"| This
+    PY["🐍 python-sdk"] -.->|"buf generate"| P
+    JS["🟨 js-sdk"] -.->|"npm run sync-proto"| P
 ```
 
-Everything under `gen/` is generated — never hand-edit. After changing the
-`.proto`, regenerate here, run `buf generate` in python-sdk, and
-`npm run sync-proto` in js-sdk.
+Solid arrows are Go imports — the compiler enforces agreement. Dotted arrows
+are generation/vendoring steps — one command each, documented below.
 
-The Go module is `priomptproto`; sibling repos point at it with a `replace`
-directive until it is published under its public path.
+## What's inside
+
+| Package | What it defines | Who uses it |
+| --- | --- | --- |
+| `proto/priompt/v1/prompt.proto` | The `PromptService` gRPC API: 9 RPCs (get, publish, diff, history, branch, merge, rollback, list) and every message on the wire | The server implements it; every client speaks it |
+| `gen/` | Go stubs generated from the `.proto` (committed — consumers just import) | server, promptctl |
+| `claims/` | The JWT claims contract (`sub`, `org`, `rw`, `exp`, `iat`, `iss`) between the priompt-auth issuer and the server's verifier | auth (minting), server (verifying) |
+| `validate/` | Prompt well-formedness — the one definition of "valid": non-empty template, every `{placeholder}` declared, every slot used | server (on write *and* serve), promptctl (on commit) |
+| `semdiff/` | The Semantic Propagation Diff engine: LCS hunks, embedding distance at the change, ripple analysis outward — plus the swappable `Embedder` interface (offline lexical fallback, or any OpenAI-compatible endpoint) | server (`DiffPrompt`, publish verdicts), promptctl (`diff`) |
+
+Why the engines and not just the schemas? Because a "verdict" only means
+something if everyone computes it the same way: a prompt that promptctl calls
+valid must be one the server will serve, and a diff promptctl calls a
+`localized tweak` must be the verdict subscribers receive. Shared definitions
+are contracts, whether they're written in protobuf or Go.
+
+## Changing the contract
+
+Requires [buf](https://buf.build/docs/installation) — remote plugins, no
+`protoc`, nothing else to install.
+
+```sh
+# 1. edit proto/priompt/v1/prompt.proto (add fields — never renumber or reuse)
+buf generate            # 2. regenerate gen/ (committed; never hand-edit)
+buf breaking --against .git#branch=main   # 3. prove you broke nobody
+
+# 4. propagate to the two non-Go consumers:
+cd ../python-sdk && buf generate          # regenerates priompt/v1/prompt_pb2*.py
+cd ../js-sdk    && npm run sync-proto     # re-vendors the .proto (loaded at runtime)
+```
+
+Changing `claims/`, `validate/`, or `semdiff/` needs no step 4 — the Go
+consumers pick the change up on their next build, and refusing to compile *is*
+the sync mechanism.
+
+The honest fine print:
+
+- **js-sdk keeps a vendored copy** of the `.proto` — an npm package must be
+  self-contained, and the client loads the file at runtime (no codegen). It is
+  a declared artifact refreshed by `npm run sync-proto`, not a hand-synced
+  fork.
+- **python-sdk commits its generated stubs** so the wheel ships them; they are
+  artifacts of this repo's `.proto`, regenerated by `buf generate` there.
+- **The Go module is `priomptproto`** — a placeholder path until first
+  release. Sibling repos point at it with a `replace` directive
+  (`replace priomptproto => ../proto`); at publish time the path becomes the
+  real one and the replaces drop.
+
+## Relation to the other repos
+
+| Repo | Role |
+| --- | --- |
+| **priompt** | Implements `PromptService`, verifies `claims/`, runs `validate/` + `semdiff/` server-side |
+| **cli** | `promptctl` — speaks the contract, runs `validate/` + `semdiff/` locally at authoring time |
+| **auth** | Mints the JWTs whose payload `claims/` defines |
+| **python-sdk / js-sdk** | Generate from / vendor the `.proto` (dotted arrows above) |
+| **db-adapters** | The other shared library (storage) — independent of this one |
+
+Tests: `go test ./...` (covers `semdiff` and `validate`; the schemas are
+exercised by every other repo's suite).
