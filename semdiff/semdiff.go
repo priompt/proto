@@ -150,14 +150,23 @@ func expand(s2 float64, w window, emb Embedder, cache map[string][]float32) (Dir
 			return d, err
 		}
 		d.Curve = append(d.Curve, Window{Radius: r, Delta: delta})
+		// The boundary check comes first. A window that already spans the whole
+		// prompt *is* the boundary, whether or not the curve also flattened
+		// there — and the two coincide exactly in the most dangerous case. When
+		// the changed hunk covers the entire prompt, growing the window changes
+		// nothing, so delta == prev to the bit and a flatten-first ordering
+		// returns with StoppedAtBoundary unset. That inverts the verdict: a
+		// ripple that stays perfectly constant out to the edge is the strongest
+		// evidence of propagation there is, and it was the one shape that could
+		// never read as structural.
+		if atBoundary {
+			d.StoppedAtBoundary = true
+			return d, nil
+		}
 		if math.Abs(delta-prev) < flattenEps { // curve flattened: propagation stopped
 			return d, nil
 		}
 		prev = delta
-		if atBoundary { // never flattened, hit the hard cap
-			d.StoppedAtBoundary = true
-			return d, nil
-		}
 	}
 }
 
