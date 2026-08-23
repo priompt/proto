@@ -249,6 +249,20 @@ func deltaText(emb Embedder, a, b string, cache map[string][]float32) (float64, 
 	if a == b { // identical context contributes no shift, and no embed call
 		return 0, nil
 	}
+	// One side empty means content appeared or vanished outright — a pure insert
+	// or a pure delete hunk. That is a total shift at this point by definition,
+	// and there is nothing to embed.
+	//
+	// This has to be handled here rather than passed to the embedder, because
+	// real embedding endpoints reject an empty input: TEI answers
+	// "413 `inputs` cannot be empty". Sending it made every insert- or
+	// delete-shaped hunk fail as soon as a real model was configured — which is
+	// most edits, since adding or removing a line is the common case. The
+	// offline lexical embedder happily embeds "" and returns a zero vector, so
+	// the fallback masked this completely.
+	if strings.TrimSpace(a) == "" || strings.TrimSpace(b) == "" {
+		return 1, nil
+	}
 	va, err := embedOne(emb, a, cache)
 	if err != nil {
 		return 0, err
