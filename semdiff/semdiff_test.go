@@ -1,6 +1,7 @@
 package semdiff
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -128,5 +129,77 @@ func TestIsolatedEditStaysLocal(t *testing.T) {
 	}
 	if got := Worst(res); got == "structural" {
 		t.Errorf("a one-word synonym swap classified %q, want a non-structural verdict", got)
+	}
+}
+
+// stubEmbedder mimics a real embedding endpoint: it refuses empty input, the
+// way TEI does ("413 `inputs` cannot be empty"). The offline LexicalEmbedder
+// accepts "" and returns a zero vector, which is why sending empty text went
+// unnoticed until a real model was configured.
+type stubEmbedder struct{ calls int }
+
+func (s *stubEmbedder) Embed(texts []string) ([][]float32, error) {
+	for _, t := range texts {
+		if strings.TrimSpace(t) == "" {
+			return nil, errors.New("embeddings endpoint: 413 `inputs` cannot be empty")
+		}
+	}
+	s.calls++
+	out := make([][]float32, len(texts))
+	for i, t := range texts {
+		// crude but deterministic: length + first byte
+		var b float32
+		if len(t) > 0 {
+			b = float32(t[0])
+		}
+		out[i] = []float32{float32(len(t)), b, 1}
+	}
+	return out, nil
+}
+
+// A pure insert has no old text, and a pure delete has no new text. Neither may
+// reach the embedder.
+func TestInsertAndDeleteNeverEmbedEmptyText(t *testing.T) {
+	cases := map[string]struct{ old, new []string }{
+		"pure insert":       {lines("keep one\nkeep two"), lines("keep one\nadded line\nkeep two")},
+		"pure delete":       {lines("keep one\ndrop me\nkeep two"), lines("keep one\nkeep two")},
+		"append at the end": {lines("only line"), lines("only line\nappended")},
+		"delete at the end": {lines("only line\ntrailing"), lines("only line")},
+		"delete everything": {lines("a\nb\nc"), lines("")},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			emb := &stubEmbedder{}
+			res, err := Analyze(emb, c.old, c.new)
+			if err != nil {
+				t.Fatalf("Analyze sent empty text to the embedder: %v", err)
+			}
+			if len(res) == 0 {
+				t.Fatal("expected at least one hunk")
+			}
+			for _, r := range res {
+				if r.Class == "" {
+					t.Error("hunk produced no classification")
+				}
+			}
+		})
+	}
+}
+
+// An insert is a total shift at the point of change: there was nothing there.
+func TestEmptySideIsMaximumDelta(t *testing.T) {
+	d, err := deltaText(&stubEmbedder{}, "", "some new instruction", map[string][]float32{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d != 1 {
+		t.Errorf("insert point delta = %v, want 1", d)
+	}
+	if d, err = deltaText(&stubEmbedder{}, "gone", "", map[string][]float32{}); err != nil || d != 1 {
+		t.Errorf("delete point delta = %v (err %v), want 1", d, err)
+	}
+	// Whitespace-only counts as empty — it carries no meaning to embed.
+	if d, err = deltaText(&stubEmbedder{}, "   \n  ", "text", map[string][]float32{}); err != nil || d != 1 {
+		t.Errorf("whitespace-only side = %v (err %v), want 1", d, err)
 	}
 }
