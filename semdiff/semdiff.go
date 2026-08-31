@@ -203,6 +203,20 @@ func classify(s2 float64, up, down Direction, pf float64) string {
 
 // --- line diff (LCS) -------------------------------------------------------
 
+// sameLine treats two lines as equal for diffing purposes if they differ only
+// in trailing spaces/tabs. Without this, a trailing-whitespace-only edit (say,
+// every line in a prompt gains two trailing spaces from a copy-paste) matches
+// no line under exact comparison, so the LCS below finds zero overlap and
+// represents it as "delete everything, then insert everything" — two hunks
+// that each touch a file boundary and each hit deltaText's empty-side case,
+// forcing Signal 2 to its maximum and the verdict to "structural" for a change
+// with no semantic content at all. Leading whitespace is left alone: it can
+// be meaningful (indentation in a code-shaped prompt), trailing whitespace
+// essentially never is.
+func sameLine(a, b string) bool {
+	return strings.TrimRight(a, " \t") == strings.TrimRight(b, " \t")
+}
+
 // changes returns the diff hunks between two line slices.
 // ponytail: O(n*m) LCS — fine for prompt-sized files, not for huge ones.
 func changes(old, new []string) []Change {
@@ -213,7 +227,7 @@ func changes(old, new []string) []Change {
 	}
 	for i := n - 1; i >= 0; i-- {
 		for j := m - 1; j >= 0; j-- {
-			if old[i] == new[j] {
+			if sameLine(old[i], new[j]) {
 				dp[i][j] = dp[i+1][j+1] + 1
 			} else {
 				dp[i][j] = max(dp[i+1][j], dp[i][j+1])
@@ -223,12 +237,12 @@ func changes(old, new []string) []Change {
 	var out []Change
 	i, j := 0, 0
 	for i < n && j < m {
-		if old[i] == new[j] {
+		if sameLine(old[i], new[j]) {
 			i, j = i+1, j+1
 			continue
 		}
 		oS, nS := i, j
-		for i < n && j < m && old[i] != new[j] {
+		for i < n && j < m && !sameLine(old[i], new[j]) {
 			if dp[i+1][j] >= dp[i][j+1] {
 				i++
 			} else {
