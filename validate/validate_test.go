@@ -19,7 +19,7 @@ func TestPrompt(t *testing.T) {
 	ok("priompt://o/r/p", "Hello {name}, welcome to {org}.", []string{"name", "org"})
 	ok("priompt://o/r/p", "No slots here.", nil)
 	ok("priompt://acme/support/agents/tier1/greeting", "Hi.", nil) // any depth
-	ok("priompt://uval.ai/support/agent", "Hi.", nil)              // dots inside a segment
+	ok("priompt://acme.ai/support/agent", "Hi.", nil)              // dots inside a segment
 
 	bad("", "x", nil)                                    // empty uri
 	bad("priompt://o/r/p", "  ", nil)                    // empty template
@@ -35,7 +35,7 @@ func TestURI(t *testing.T) {
 	valid := []string{
 		"priompt://acme/onboarding/welcome",
 		"priompt://acme/support/agents/tier1/greeting",
-		"priompt://uval.ai/x",
+		"priompt://acme.ai/x",
 		"priompt://acme-corp/a_b/x-1",
 	}
 	for _, u := range valid {
