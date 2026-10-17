@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package priompt.v1;
 
-option go_package = "priomptproto/gen/priompt/v1;priomptv1";
+option go_package = "github.com/priompt/proto/gen/priompt/v1;priomptv1";
 
 // PromptService serves validated prompts. Phase 1 is read-only over the wire;
 // writes happen via the `priompt put` CLI until promptctl lands (Phase 3).

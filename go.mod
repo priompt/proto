@@ -1,4 +1,4 @@
-module priomptproto
+module github.com/priompt/proto
 
 go 1.25.0
 
