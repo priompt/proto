@@ -14,3 +14,12 @@ jobs:
         with:
           go-version-file: go.mod
       - run: go test ./...
+
+  buf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+      - run: buf lint

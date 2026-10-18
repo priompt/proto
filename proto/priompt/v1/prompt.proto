@@ -11,6 +11,9 @@ service PromptService {
   // DiffPrompt runs the Semantic Propagation Diff between the stored prompt at
   // `uri` (the original) and `new_template` (the edit), using the embedding
   // model the server operator configured at startup.
+  // DiffPromptResponse is shared with DiffCommits on purpose (same result shape);
+  // splitting it would break the Go API and buf breaking.
+  // buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
   rpc DiffPrompt(DiffPromptRequest) returns (DiffPromptResponse);
   // PublishPrompt validates and stores a new prompt version on the server, then
   // notifies subscribers over NATS. This is the write-through path that makes a
@@ -24,7 +27,9 @@ service PromptService {
   // MergeBranch merges `from` into `into`, recording a two-parent merge commit.
   rpc MergeBranch(MergeBranchRequest) returns (MergeBranchResponse);
   // DiffCommits runs the semantic diff between any two commits of a prompt — the
-  // query-anything-in-history path.
+  // query-anything-in-history path. Returns DiffPromptResponse (see DiffPrompt).
+  // buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+  // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
   rpc DiffCommits(DiffCommitsRequest) returns (DiffPromptResponse);
   // SetBranch points a branch at an existing commit — the rollback / pin path.
   // Moving "main" instantly changes the served version.
