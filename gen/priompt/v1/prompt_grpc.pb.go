@@ -41,6 +41,9 @@ type PromptServiceClient interface {
 	// DiffPrompt runs the Semantic Propagation Diff between the stored prompt at
 	// `uri` (the original) and `new_template` (the edit), using the embedding
 	// model the server operator configured at startup.
+	// DiffPromptResponse is shared with DiffCommits on purpose (same result shape);
+	// splitting it would break the Go API and buf breaking.
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
 	DiffPrompt(ctx context.Context, in *DiffPromptRequest, opts ...grpc.CallOption) (*DiffPromptResponse, error)
 	// PublishPrompt validates and stores a new prompt version on the server, then
 	// notifies subscribers over NATS. This is the write-through path that makes a
@@ -53,7 +56,9 @@ type PromptServiceClient interface {
 	// MergeBranch merges `from` into `into`, recording a two-parent merge commit.
 	MergeBranch(ctx context.Context, in *MergeBranchRequest, opts ...grpc.CallOption) (*MergeBranchResponse, error)
 	// DiffCommits runs the semantic diff between any two commits of a prompt — the
-	// query-anything-in-history path.
+	// query-anything-in-history path. Returns DiffPromptResponse (see DiffPrompt).
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
 	DiffCommits(ctx context.Context, in *DiffCommitsRequest, opts ...grpc.CallOption) (*DiffPromptResponse, error)
 	// SetBranch points a branch at an existing commit — the rollback / pin path.
 	// Moving "main" instantly changes the served version.
@@ -173,6 +178,9 @@ type PromptServiceServer interface {
 	// DiffPrompt runs the Semantic Propagation Diff between the stored prompt at
 	// `uri` (the original) and `new_template` (the edit), using the embedding
 	// model the server operator configured at startup.
+	// DiffPromptResponse is shared with DiffCommits on purpose (same result shape);
+	// splitting it would break the Go API and buf breaking.
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
 	DiffPrompt(context.Context, *DiffPromptRequest) (*DiffPromptResponse, error)
 	// PublishPrompt validates and stores a new prompt version on the server, then
 	// notifies subscribers over NATS. This is the write-through path that makes a
@@ -185,7 +193,9 @@ type PromptServiceServer interface {
 	// MergeBranch merges `from` into `into`, recording a two-parent merge commit.
 	MergeBranch(context.Context, *MergeBranchRequest) (*MergeBranchResponse, error)
 	// DiffCommits runs the semantic diff between any two commits of a prompt — the
-	// query-anything-in-history path.
+	// query-anything-in-history path. Returns DiffPromptResponse (see DiffPrompt).
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
 	DiffCommits(context.Context, *DiffCommitsRequest) (*DiffPromptResponse, error)
 	// SetBranch points a branch at an existing commit — the rollback / pin path.
 	// Moving "main" instantly changes the served version.
