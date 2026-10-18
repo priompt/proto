@@ -28,6 +28,8 @@ const (
 	PromptService_DiffCommits_FullMethodName   = "/priompt.v1.PromptService/DiffCommits"
 	PromptService_SetBranch_FullMethodName     = "/priompt.v1.PromptService/SetBranch"
 	PromptService_ListPrompts_FullMethodName   = "/priompt.v1.PromptService/ListPrompts"
+	PromptService_ListBranches_FullMethodName  = "/priompt.v1.PromptService/ListBranches"
+	PromptService_ListCommits_FullMethodName   = "/priompt.v1.PromptService/ListCommits"
 )
 
 // PromptServiceClient is the client API for PromptService service.
@@ -67,6 +69,13 @@ type PromptServiceClient interface {
 	// prompt whose URI starts with `prefix`, sorted. A "repo" is just a URI prefix;
 	// the caller derives the tree by splitting URIs on "/".
 	ListPrompts(ctx context.Context, in *ListPromptsRequest, opts ...grpc.CallOption) (*ListPromptsResponse, error)
+	// ListBranches returns every branch of a prompt and the commit it points at,
+	// sorted by name.
+	ListBranches(ctx context.Context, in *ListBranchesRequest, opts ...grpc.CallOption) (*ListBranchesResponse, error)
+	// ListCommits returns every commit of a prompt, newest first, including
+	// commits no branch reaches any more (e.g. after a rollback) — the
+	// roll-forward path. History is one branch's first-parent log.
+	ListCommits(ctx context.Context, in *ListCommitsRequest, opts ...grpc.CallOption) (*ListCommitsResponse, error)
 }
 
 type promptServiceClient struct {
@@ -167,6 +176,26 @@ func (c *promptServiceClient) ListPrompts(ctx context.Context, in *ListPromptsRe
 	return out, nil
 }
 
+func (c *promptServiceClient) ListBranches(ctx context.Context, in *ListBranchesRequest, opts ...grpc.CallOption) (*ListBranchesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListBranchesResponse)
+	err := c.cc.Invoke(ctx, PromptService_ListBranches_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *promptServiceClient) ListCommits(ctx context.Context, in *ListCommitsRequest, opts ...grpc.CallOption) (*ListCommitsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCommitsResponse)
+	err := c.cc.Invoke(ctx, PromptService_ListCommits_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PromptServiceServer is the server API for PromptService service.
 // All implementations must embed UnimplementedPromptServiceServer
 // for forward compatibility.
@@ -204,6 +233,13 @@ type PromptServiceServer interface {
 	// prompt whose URI starts with `prefix`, sorted. A "repo" is just a URI prefix;
 	// the caller derives the tree by splitting URIs on "/".
 	ListPrompts(context.Context, *ListPromptsRequest) (*ListPromptsResponse, error)
+	// ListBranches returns every branch of a prompt and the commit it points at,
+	// sorted by name.
+	ListBranches(context.Context, *ListBranchesRequest) (*ListBranchesResponse, error)
+	// ListCommits returns every commit of a prompt, newest first, including
+	// commits no branch reaches any more (e.g. after a rollback) — the
+	// roll-forward path. History is one branch's first-parent log.
+	ListCommits(context.Context, *ListCommitsRequest) (*ListCommitsResponse, error)
 	mustEmbedUnimplementedPromptServiceServer()
 }
 
@@ -240,6 +276,12 @@ func (UnimplementedPromptServiceServer) SetBranch(context.Context, *SetBranchReq
 }
 func (UnimplementedPromptServiceServer) ListPrompts(context.Context, *ListPromptsRequest) (*ListPromptsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPrompts not implemented")
+}
+func (UnimplementedPromptServiceServer) ListBranches(context.Context, *ListBranchesRequest) (*ListBranchesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListBranches not implemented")
+}
+func (UnimplementedPromptServiceServer) ListCommits(context.Context, *ListCommitsRequest) (*ListCommitsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCommits not implemented")
 }
 func (UnimplementedPromptServiceServer) mustEmbedUnimplementedPromptServiceServer() {}
 func (UnimplementedPromptServiceServer) testEmbeddedByValue()                       {}
@@ -424,6 +466,42 @@ func _PromptService_ListPrompts_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PromptService_ListBranches_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBranchesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PromptServiceServer).ListBranches(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PromptService_ListBranches_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PromptServiceServer).ListBranches(ctx, req.(*ListBranchesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PromptService_ListCommits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCommitsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PromptServiceServer).ListCommits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PromptService_ListCommits_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PromptServiceServer).ListCommits(ctx, req.(*ListCommitsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PromptService_ServiceDesc is the grpc.ServiceDesc for PromptService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -466,6 +544,14 @@ var PromptService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPrompts",
 			Handler:    _PromptService_ListPrompts_Handler,
+		},
+		{
+			MethodName: "ListBranches",
+			Handler:    _PromptService_ListBranches_Handler,
+		},
+		{
+			MethodName: "ListCommits",
+			Handler:    _PromptService_ListCommits_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
