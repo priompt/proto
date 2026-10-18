@@ -38,7 +38,7 @@ are generation/vendoring steps — one command each, documented below.
 
 | Package | What it defines | Who uses it |
 | --- | --- | --- |
-| `proto/priompt/v1/prompt.proto` | The `PromptService` gRPC API: 9 RPCs (get, publish, diff, history, branch, merge, rollback, list) and every message on the wire | The server implements it; every client speaks it |
+| `proto/priompt/v1/prompt.proto` | The `PromptService` gRPC API: 11 RPCs (get, publish, diff, history, branch, merge, rollback, list prompts, list branches, list commits) and every message on the wire | The server implements it; every client speaks it |
 | `gen/` | Go stubs generated from the `.proto` (committed — consumers just import) | server, promptctl |
 | `claims/` | The JWT claims contract (`sub`, `org`, `rw`, `exp`, `iat`, `iss`) between the priompt-auth issuer and the server's verifier | auth (minting), server (verifying) |
 | `validate/` | Prompt well-formedness — the one definition of "valid": non-empty template, every `{placeholder}` declared, every slot used | server (on write *and* serve), promptctl (on commit) |

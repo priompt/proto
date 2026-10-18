@@ -39,6 +39,32 @@ service PromptService {
   // prompt whose URI starts with `prefix`, sorted. A "repo" is just a URI prefix;
   // the caller derives the tree by splitting URIs on "/".
   rpc ListPrompts(ListPromptsRequest) returns (ListPromptsResponse);
+
+  // ListBranches returns every branch of a prompt and the commit it points at,
+  // sorted by name.
+  rpc ListBranches(ListBranchesRequest) returns (ListBranchesResponse);
+  // ListCommits returns every commit of a prompt, newest first, including
+  // commits no branch reaches any more (e.g. after a rollback) — the
+  // roll-forward path. History is one branch's first-parent log.
+  rpc ListCommits(ListCommitsRequest) returns (ListCommitsResponse);
+}
+
+message ListBranchesRequest {
+  string uri = 1;
+}
+message ListBranchesResponse {
+  repeated Branch branches = 1;
+}
+message Branch {
+  string name = 1;
+  string commit_hash = 2; // the branch tip
+}
+
+message ListCommitsRequest {
+  string uri = 1;
+}
+message ListCommitsResponse {
+  repeated Commit commits = 1;
 }
 
 message ListPromptsRequest {

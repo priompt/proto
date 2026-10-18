@@ -21,6 +21,234 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ListBranchesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Uri           string                 `protobuf:"bytes,1,opt,name=uri,proto3" json:"uri,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBranchesRequest) Reset() {
+	*x = ListBranchesRequest{}
+	mi := &file_priompt_v1_prompt_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBranchesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBranchesRequest) ProtoMessage() {}
+
+func (x *ListBranchesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_priompt_v1_prompt_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBranchesRequest.ProtoReflect.Descriptor instead.
+func (*ListBranchesRequest) Descriptor() ([]byte, []int) {
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ListBranchesRequest) GetUri() string {
+	if x != nil {
+		return x.Uri
+	}
+	return ""
+}
+
+type ListBranchesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Branches      []*Branch              `protobuf:"bytes,1,rep,name=branches,proto3" json:"branches,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBranchesResponse) Reset() {
+	*x = ListBranchesResponse{}
+	mi := &file_priompt_v1_prompt_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBranchesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBranchesResponse) ProtoMessage() {}
+
+func (x *ListBranchesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_priompt_v1_prompt_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBranchesResponse.ProtoReflect.Descriptor instead.
+func (*ListBranchesResponse) Descriptor() ([]byte, []int) {
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ListBranchesResponse) GetBranches() []*Branch {
+	if x != nil {
+		return x.Branches
+	}
+	return nil
+}
+
+type Branch struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	CommitHash    string                 `protobuf:"bytes,2,opt,name=commit_hash,json=commitHash,proto3" json:"commit_hash,omitempty"` // the branch tip
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Branch) Reset() {
+	*x = Branch{}
+	mi := &file_priompt_v1_prompt_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Branch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Branch) ProtoMessage() {}
+
+func (x *Branch) ProtoReflect() protoreflect.Message {
+	mi := &file_priompt_v1_prompt_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Branch.ProtoReflect.Descriptor instead.
+func (*Branch) Descriptor() ([]byte, []int) {
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Branch) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Branch) GetCommitHash() string {
+	if x != nil {
+		return x.CommitHash
+	}
+	return ""
+}
+
+type ListCommitsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Uri           string                 `protobuf:"bytes,1,opt,name=uri,proto3" json:"uri,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCommitsRequest) Reset() {
+	*x = ListCommitsRequest{}
+	mi := &file_priompt_v1_prompt_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCommitsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCommitsRequest) ProtoMessage() {}
+
+func (x *ListCommitsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_priompt_v1_prompt_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCommitsRequest.ProtoReflect.Descriptor instead.
+func (*ListCommitsRequest) Descriptor() ([]byte, []int) {
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ListCommitsRequest) GetUri() string {
+	if x != nil {
+		return x.Uri
+	}
+	return ""
+}
+
+type ListCommitsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Commits       []*Commit              `protobuf:"bytes,1,rep,name=commits,proto3" json:"commits,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCommitsResponse) Reset() {
+	*x = ListCommitsResponse{}
+	mi := &file_priompt_v1_prompt_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCommitsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCommitsResponse) ProtoMessage() {}
+
+func (x *ListCommitsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_priompt_v1_prompt_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCommitsResponse.ProtoReflect.Descriptor instead.
+func (*ListCommitsResponse) Descriptor() ([]byte, []int) {
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ListCommitsResponse) GetCommits() []*Commit {
+	if x != nil {
+		return x.Commits
+	}
+	return nil
+}
+
 type ListPromptsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Prefix        string                 `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"` // e.g. "priompt://acme/support/"; empty = whole store (admin)
@@ -30,7 +258,7 @@ type ListPromptsRequest struct {
 
 func (x *ListPromptsRequest) Reset() {
 	*x = ListPromptsRequest{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[0]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +270,7 @@ func (x *ListPromptsRequest) String() string {
 func (*ListPromptsRequest) ProtoMessage() {}
 
 func (x *ListPromptsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[0]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +283,7 @@ func (x *ListPromptsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPromptsRequest.ProtoReflect.Descriptor instead.
 func (*ListPromptsRequest) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{0}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ListPromptsRequest) GetPrefix() string {
@@ -74,7 +302,7 @@ type ListPromptsResponse struct {
 
 func (x *ListPromptsResponse) Reset() {
 	*x = ListPromptsResponse{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[1]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -86,7 +314,7 @@ func (x *ListPromptsResponse) String() string {
 func (*ListPromptsResponse) ProtoMessage() {}
 
 func (x *ListPromptsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[1]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,7 +327,7 @@ func (x *ListPromptsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPromptsResponse.ProtoReflect.Descriptor instead.
 func (*ListPromptsResponse) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{1}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ListPromptsResponse) GetEntries() []*PromptEntry {
@@ -119,7 +347,7 @@ type PromptEntry struct {
 
 func (x *PromptEntry) Reset() {
 	*x = PromptEntry{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[2]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -131,7 +359,7 @@ func (x *PromptEntry) String() string {
 func (*PromptEntry) ProtoMessage() {}
 
 func (x *PromptEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[2]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -144,7 +372,7 @@ func (x *PromptEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PromptEntry.ProtoReflect.Descriptor instead.
 func (*PromptEntry) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{2}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PromptEntry) GetUri() string {
@@ -172,7 +400,7 @@ type SetBranchRequest struct {
 
 func (x *SetBranchRequest) Reset() {
 	*x = SetBranchRequest{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[3]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -184,7 +412,7 @@ func (x *SetBranchRequest) String() string {
 func (*SetBranchRequest) ProtoMessage() {}
 
 func (x *SetBranchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[3]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -197,7 +425,7 @@ func (x *SetBranchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetBranchRequest.ProtoReflect.Descriptor instead.
 func (*SetBranchRequest) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{3}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SetBranchRequest) GetUri() string {
@@ -230,7 +458,7 @@ type SetBranchResponse struct {
 
 func (x *SetBranchResponse) Reset() {
 	*x = SetBranchResponse{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[4]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -242,7 +470,7 @@ func (x *SetBranchResponse) String() string {
 func (*SetBranchResponse) ProtoMessage() {}
 
 func (x *SetBranchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[4]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -255,7 +483,7 @@ func (x *SetBranchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetBranchResponse.ProtoReflect.Descriptor instead.
 func (*SetBranchResponse) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{4}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SetBranchResponse) GetVersionHash() string {
@@ -285,7 +513,7 @@ type Commit struct {
 
 func (x *Commit) Reset() {
 	*x = Commit{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[5]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -297,7 +525,7 @@ func (x *Commit) String() string {
 func (*Commit) ProtoMessage() {}
 
 func (x *Commit) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[5]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -310,7 +538,7 @@ func (x *Commit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Commit.ProtoReflect.Descriptor instead.
 func (*Commit) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{5}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Commit) GetHash() string {
@@ -372,7 +600,7 @@ type HistoryRequest struct {
 
 func (x *HistoryRequest) Reset() {
 	*x = HistoryRequest{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[6]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -384,7 +612,7 @@ func (x *HistoryRequest) String() string {
 func (*HistoryRequest) ProtoMessage() {}
 
 func (x *HistoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[6]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -397,7 +625,7 @@ func (x *HistoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HistoryRequest.ProtoReflect.Descriptor instead.
 func (*HistoryRequest) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{6}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *HistoryRequest) GetUri() string {
@@ -423,7 +651,7 @@ type HistoryResponse struct {
 
 func (x *HistoryResponse) Reset() {
 	*x = HistoryResponse{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[7]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -435,7 +663,7 @@ func (x *HistoryResponse) String() string {
 func (*HistoryResponse) ProtoMessage() {}
 
 func (x *HistoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[7]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -448,7 +676,7 @@ func (x *HistoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HistoryResponse.ProtoReflect.Descriptor instead.
 func (*HistoryResponse) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{7}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *HistoryResponse) GetCommits() []*Commit {
@@ -469,7 +697,7 @@ type CreateBranchRequest struct {
 
 func (x *CreateBranchRequest) Reset() {
 	*x = CreateBranchRequest{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[8]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -481,7 +709,7 @@ func (x *CreateBranchRequest) String() string {
 func (*CreateBranchRequest) ProtoMessage() {}
 
 func (x *CreateBranchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[8]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -494,7 +722,7 @@ func (x *CreateBranchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBranchRequest.ProtoReflect.Descriptor instead.
 func (*CreateBranchRequest) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{8}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *CreateBranchRequest) GetUri() string {
@@ -527,7 +755,7 @@ type CreateBranchResponse struct {
 
 func (x *CreateBranchResponse) Reset() {
 	*x = CreateBranchResponse{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[9]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -539,7 +767,7 @@ func (x *CreateBranchResponse) String() string {
 func (*CreateBranchResponse) ProtoMessage() {}
 
 func (x *CreateBranchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[9]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -552,7 +780,7 @@ func (x *CreateBranchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBranchResponse.ProtoReflect.Descriptor instead.
 func (*CreateBranchResponse) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{9}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CreateBranchResponse) GetCommitHash() string {
@@ -574,7 +802,7 @@ type MergeBranchRequest struct {
 
 func (x *MergeBranchRequest) Reset() {
 	*x = MergeBranchRequest{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[10]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -586,7 +814,7 @@ func (x *MergeBranchRequest) String() string {
 func (*MergeBranchRequest) ProtoMessage() {}
 
 func (x *MergeBranchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[10]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -599,7 +827,7 @@ func (x *MergeBranchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MergeBranchRequest.ProtoReflect.Descriptor instead.
 func (*MergeBranchRequest) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{10}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *MergeBranchRequest) GetUri() string {
@@ -639,7 +867,7 @@ type MergeBranchResponse struct {
 
 func (x *MergeBranchResponse) Reset() {
 	*x = MergeBranchResponse{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[11]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -651,7 +879,7 @@ func (x *MergeBranchResponse) String() string {
 func (*MergeBranchResponse) ProtoMessage() {}
 
 func (x *MergeBranchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[11]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -664,7 +892,7 @@ func (x *MergeBranchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MergeBranchResponse.ProtoReflect.Descriptor instead.
 func (*MergeBranchResponse) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{11}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *MergeBranchResponse) GetCommitHash() string {
@@ -685,7 +913,7 @@ type DiffCommitsRequest struct {
 
 func (x *DiffCommitsRequest) Reset() {
 	*x = DiffCommitsRequest{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[12]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -697,7 +925,7 @@ func (x *DiffCommitsRequest) String() string {
 func (*DiffCommitsRequest) ProtoMessage() {}
 
 func (x *DiffCommitsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[12]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -710,7 +938,7 @@ func (x *DiffCommitsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiffCommitsRequest.ProtoReflect.Descriptor instead.
 func (*DiffCommitsRequest) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{12}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *DiffCommitsRequest) GetUri() string {
@@ -747,7 +975,7 @@ type GetPromptRequest struct {
 
 func (x *GetPromptRequest) Reset() {
 	*x = GetPromptRequest{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[13]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -759,7 +987,7 @@ func (x *GetPromptRequest) String() string {
 func (*GetPromptRequest) ProtoMessage() {}
 
 func (x *GetPromptRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[13]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -772,7 +1000,7 @@ func (x *GetPromptRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPromptRequest.ProtoReflect.Descriptor instead.
 func (*GetPromptRequest) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{13}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetPromptRequest) GetUri() string {
@@ -805,7 +1033,7 @@ type GetPromptResponse struct {
 
 func (x *GetPromptResponse) Reset() {
 	*x = GetPromptResponse{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[14]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -817,7 +1045,7 @@ func (x *GetPromptResponse) String() string {
 func (*GetPromptResponse) ProtoMessage() {}
 
 func (x *GetPromptResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[14]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -830,7 +1058,7 @@ func (x *GetPromptResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPromptResponse.ProtoReflect.Descriptor instead.
 func (*GetPromptResponse) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{14}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GetPromptResponse) GetUri() string {
@@ -881,7 +1109,7 @@ type PublishPromptRequest struct {
 
 func (x *PublishPromptRequest) Reset() {
 	*x = PublishPromptRequest{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[15]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -893,7 +1121,7 @@ func (x *PublishPromptRequest) String() string {
 func (*PublishPromptRequest) ProtoMessage() {}
 
 func (x *PublishPromptRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[15]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -906,7 +1134,7 @@ func (x *PublishPromptRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishPromptRequest.ProtoReflect.Descriptor instead.
 func (*PublishPromptRequest) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{15}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *PublishPromptRequest) GetUri() string {
@@ -953,7 +1181,7 @@ type PublishPromptResponse struct {
 
 func (x *PublishPromptResponse) Reset() {
 	*x = PublishPromptResponse{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[16]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -965,7 +1193,7 @@ func (x *PublishPromptResponse) String() string {
 func (*PublishPromptResponse) ProtoMessage() {}
 
 func (x *PublishPromptResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[16]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -978,7 +1206,7 @@ func (x *PublishPromptResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishPromptResponse.ProtoReflect.Descriptor instead.
 func (*PublishPromptResponse) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{16}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *PublishPromptResponse) GetVersionHash() string {
@@ -998,7 +1226,7 @@ type DiffPromptRequest struct {
 
 func (x *DiffPromptRequest) Reset() {
 	*x = DiffPromptRequest{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[17]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1010,7 +1238,7 @@ func (x *DiffPromptRequest) String() string {
 func (*DiffPromptRequest) ProtoMessage() {}
 
 func (x *DiffPromptRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[17]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1023,7 +1251,7 @@ func (x *DiffPromptRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiffPromptRequest.ProtoReflect.Descriptor instead.
 func (*DiffPromptRequest) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{17}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *DiffPromptRequest) GetUri() string {
@@ -1049,7 +1277,7 @@ type DiffPromptResponse struct {
 
 func (x *DiffPromptResponse) Reset() {
 	*x = DiffPromptResponse{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[18]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1061,7 +1289,7 @@ func (x *DiffPromptResponse) String() string {
 func (*DiffPromptResponse) ProtoMessage() {}
 
 func (x *DiffPromptResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[18]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1074,7 +1302,7 @@ func (x *DiffPromptResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiffPromptResponse.ProtoReflect.Descriptor instead.
 func (*DiffPromptResponse) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{18}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *DiffPromptResponse) GetChanges() []*Change {
@@ -1095,7 +1323,7 @@ type Window struct {
 
 func (x *Window) Reset() {
 	*x = Window{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[19]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1107,7 +1335,7 @@ func (x *Window) String() string {
 func (*Window) ProtoMessage() {}
 
 func (x *Window) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[19]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1120,7 +1348,7 @@ func (x *Window) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Window.ProtoReflect.Descriptor instead.
 func (*Window) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{19}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *Window) GetRadius() int32 {
@@ -1160,7 +1388,7 @@ type Change struct {
 
 func (x *Change) Reset() {
 	*x = Change{}
-	mi := &file_priompt_v1_prompt_proto_msgTypes[20]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1172,7 +1400,7 @@ func (x *Change) String() string {
 func (*Change) ProtoMessage() {}
 
 func (x *Change) ProtoReflect() protoreflect.Message {
-	mi := &file_priompt_v1_prompt_proto_msgTypes[20]
+	mi := &file_priompt_v1_prompt_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1185,7 +1413,7 @@ func (x *Change) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Change.ProtoReflect.Descriptor instead.
 func (*Change) Descriptor() ([]byte, []int) {
-	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{20}
+	return file_priompt_v1_prompt_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *Change) GetOldStart() int32 {
@@ -1270,7 +1498,19 @@ var File_priompt_v1_prompt_proto protoreflect.FileDescriptor
 const file_priompt_v1_prompt_proto_rawDesc = "" +
 	"\n" +
 	"\x17priompt/v1/prompt.proto\x12\n" +
-	"priompt.v1\",\n" +
+	"priompt.v1\"'\n" +
+	"\x13ListBranchesRequest\x12\x10\n" +
+	"\x03uri\x18\x01 \x01(\tR\x03uri\"F\n" +
+	"\x14ListBranchesResponse\x12.\n" +
+	"\bbranches\x18\x01 \x03(\v2\x12.priompt.v1.BranchR\bbranches\"=\n" +
+	"\x06Branch\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n" +
+	"\vcommit_hash\x18\x02 \x01(\tR\n" +
+	"commitHash\"&\n" +
+	"\x12ListCommitsRequest\x12\x10\n" +
+	"\x03uri\x18\x01 \x01(\tR\x03uri\"C\n" +
+	"\x13ListCommitsResponse\x12,\n" +
+	"\acommits\x18\x01 \x03(\v2\x12.priompt.v1.CommitR\acommits\",\n" +
 	"\x12ListPromptsRequest\x12\x16\n" +
 	"\x06prefix\x18\x01 \x01(\tR\x06prefix\"H\n" +
 	"\x13ListPromptsResponse\x121\n" +
@@ -1358,7 +1598,7 @@ const file_priompt_v1_prompt_proto_rawDesc = "" +
 	"upBoundary\x12#\n" +
 	"\rdown_boundary\x18\n" +
 	" \x01(\bR\fdownBoundary\x12&\n" +
-	"\x0eclassification\x18\v \x01(\tR\x0eclassification2\xcc\x05\n" +
+	"\x0eclassification\x18\v \x01(\tR\x0eclassification2\xef\x06\n" +
 	"\rPromptService\x12H\n" +
 	"\tGetPrompt\x12\x1c.priompt.v1.GetPromptRequest\x1a\x1d.priompt.v1.GetPromptResponse\x12K\n" +
 	"\n" +
@@ -1369,7 +1609,9 @@ const file_priompt_v1_prompt_proto_rawDesc = "" +
 	"\vMergeBranch\x12\x1e.priompt.v1.MergeBranchRequest\x1a\x1f.priompt.v1.MergeBranchResponse\x12M\n" +
 	"\vDiffCommits\x12\x1e.priompt.v1.DiffCommitsRequest\x1a\x1e.priompt.v1.DiffPromptResponse\x12H\n" +
 	"\tSetBranch\x12\x1c.priompt.v1.SetBranchRequest\x1a\x1d.priompt.v1.SetBranchResponse\x12N\n" +
-	"\vListPrompts\x12\x1e.priompt.v1.ListPromptsRequest\x1a\x1f.priompt.v1.ListPromptsResponseB3Z1github.com/priompt/proto/gen/priompt/v1;priomptv1b\x06proto3"
+	"\vListPrompts\x12\x1e.priompt.v1.ListPromptsRequest\x1a\x1f.priompt.v1.ListPromptsResponse\x12Q\n" +
+	"\fListBranches\x12\x1f.priompt.v1.ListBranchesRequest\x1a .priompt.v1.ListBranchesResponse\x12N\n" +
+	"\vListCommits\x12\x1e.priompt.v1.ListCommitsRequest\x1a\x1f.priompt.v1.ListCommitsResponseB3Z1github.com/priompt/proto/gen/priompt/v1;priomptv1b\x06proto3"
 
 var (
 	file_priompt_v1_prompt_proto_rawDescOnce sync.Once
@@ -1383,59 +1625,70 @@ func file_priompt_v1_prompt_proto_rawDescGZIP() []byte {
 	return file_priompt_v1_prompt_proto_rawDescData
 }
 
-var file_priompt_v1_prompt_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_priompt_v1_prompt_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_priompt_v1_prompt_proto_goTypes = []any{
-	(*ListPromptsRequest)(nil),    // 0: priompt.v1.ListPromptsRequest
-	(*ListPromptsResponse)(nil),   // 1: priompt.v1.ListPromptsResponse
-	(*PromptEntry)(nil),           // 2: priompt.v1.PromptEntry
-	(*SetBranchRequest)(nil),      // 3: priompt.v1.SetBranchRequest
-	(*SetBranchResponse)(nil),     // 4: priompt.v1.SetBranchResponse
-	(*Commit)(nil),                // 5: priompt.v1.Commit
-	(*HistoryRequest)(nil),        // 6: priompt.v1.HistoryRequest
-	(*HistoryResponse)(nil),       // 7: priompt.v1.HistoryResponse
-	(*CreateBranchRequest)(nil),   // 8: priompt.v1.CreateBranchRequest
-	(*CreateBranchResponse)(nil),  // 9: priompt.v1.CreateBranchResponse
-	(*MergeBranchRequest)(nil),    // 10: priompt.v1.MergeBranchRequest
-	(*MergeBranchResponse)(nil),   // 11: priompt.v1.MergeBranchResponse
-	(*DiffCommitsRequest)(nil),    // 12: priompt.v1.DiffCommitsRequest
-	(*GetPromptRequest)(nil),      // 13: priompt.v1.GetPromptRequest
-	(*GetPromptResponse)(nil),     // 14: priompt.v1.GetPromptResponse
-	(*PublishPromptRequest)(nil),  // 15: priompt.v1.PublishPromptRequest
-	(*PublishPromptResponse)(nil), // 16: priompt.v1.PublishPromptResponse
-	(*DiffPromptRequest)(nil),     // 17: priompt.v1.DiffPromptRequest
-	(*DiffPromptResponse)(nil),    // 18: priompt.v1.DiffPromptResponse
-	(*Window)(nil),                // 19: priompt.v1.Window
-	(*Change)(nil),                // 20: priompt.v1.Change
+	(*ListBranchesRequest)(nil),   // 0: priompt.v1.ListBranchesRequest
+	(*ListBranchesResponse)(nil),  // 1: priompt.v1.ListBranchesResponse
+	(*Branch)(nil),                // 2: priompt.v1.Branch
+	(*ListCommitsRequest)(nil),    // 3: priompt.v1.ListCommitsRequest
+	(*ListCommitsResponse)(nil),   // 4: priompt.v1.ListCommitsResponse
+	(*ListPromptsRequest)(nil),    // 5: priompt.v1.ListPromptsRequest
+	(*ListPromptsResponse)(nil),   // 6: priompt.v1.ListPromptsResponse
+	(*PromptEntry)(nil),           // 7: priompt.v1.PromptEntry
+	(*SetBranchRequest)(nil),      // 8: priompt.v1.SetBranchRequest
+	(*SetBranchResponse)(nil),     // 9: priompt.v1.SetBranchResponse
+	(*Commit)(nil),                // 10: priompt.v1.Commit
+	(*HistoryRequest)(nil),        // 11: priompt.v1.HistoryRequest
+	(*HistoryResponse)(nil),       // 12: priompt.v1.HistoryResponse
+	(*CreateBranchRequest)(nil),   // 13: priompt.v1.CreateBranchRequest
+	(*CreateBranchResponse)(nil),  // 14: priompt.v1.CreateBranchResponse
+	(*MergeBranchRequest)(nil),    // 15: priompt.v1.MergeBranchRequest
+	(*MergeBranchResponse)(nil),   // 16: priompt.v1.MergeBranchResponse
+	(*DiffCommitsRequest)(nil),    // 17: priompt.v1.DiffCommitsRequest
+	(*GetPromptRequest)(nil),      // 18: priompt.v1.GetPromptRequest
+	(*GetPromptResponse)(nil),     // 19: priompt.v1.GetPromptResponse
+	(*PublishPromptRequest)(nil),  // 20: priompt.v1.PublishPromptRequest
+	(*PublishPromptResponse)(nil), // 21: priompt.v1.PublishPromptResponse
+	(*DiffPromptRequest)(nil),     // 22: priompt.v1.DiffPromptRequest
+	(*DiffPromptResponse)(nil),    // 23: priompt.v1.DiffPromptResponse
+	(*Window)(nil),                // 24: priompt.v1.Window
+	(*Change)(nil),                // 25: priompt.v1.Change
 }
 var file_priompt_v1_prompt_proto_depIdxs = []int32{
-	2,  // 0: priompt.v1.ListPromptsResponse.entries:type_name -> priompt.v1.PromptEntry
-	5,  // 1: priompt.v1.HistoryResponse.commits:type_name -> priompt.v1.Commit
-	20, // 2: priompt.v1.DiffPromptResponse.changes:type_name -> priompt.v1.Change
-	19, // 3: priompt.v1.Change.up:type_name -> priompt.v1.Window
-	19, // 4: priompt.v1.Change.down:type_name -> priompt.v1.Window
-	13, // 5: priompt.v1.PromptService.GetPrompt:input_type -> priompt.v1.GetPromptRequest
-	17, // 6: priompt.v1.PromptService.DiffPrompt:input_type -> priompt.v1.DiffPromptRequest
-	15, // 7: priompt.v1.PromptService.PublishPrompt:input_type -> priompt.v1.PublishPromptRequest
-	6,  // 8: priompt.v1.PromptService.History:input_type -> priompt.v1.HistoryRequest
-	8,  // 9: priompt.v1.PromptService.CreateBranch:input_type -> priompt.v1.CreateBranchRequest
-	10, // 10: priompt.v1.PromptService.MergeBranch:input_type -> priompt.v1.MergeBranchRequest
-	12, // 11: priompt.v1.PromptService.DiffCommits:input_type -> priompt.v1.DiffCommitsRequest
-	3,  // 12: priompt.v1.PromptService.SetBranch:input_type -> priompt.v1.SetBranchRequest
-	0,  // 13: priompt.v1.PromptService.ListPrompts:input_type -> priompt.v1.ListPromptsRequest
-	14, // 14: priompt.v1.PromptService.GetPrompt:output_type -> priompt.v1.GetPromptResponse
-	18, // 15: priompt.v1.PromptService.DiffPrompt:output_type -> priompt.v1.DiffPromptResponse
-	16, // 16: priompt.v1.PromptService.PublishPrompt:output_type -> priompt.v1.PublishPromptResponse
-	7,  // 17: priompt.v1.PromptService.History:output_type -> priompt.v1.HistoryResponse
-	9,  // 18: priompt.v1.PromptService.CreateBranch:output_type -> priompt.v1.CreateBranchResponse
-	11, // 19: priompt.v1.PromptService.MergeBranch:output_type -> priompt.v1.MergeBranchResponse
-	18, // 20: priompt.v1.PromptService.DiffCommits:output_type -> priompt.v1.DiffPromptResponse
-	4,  // 21: priompt.v1.PromptService.SetBranch:output_type -> priompt.v1.SetBranchResponse
-	1,  // 22: priompt.v1.PromptService.ListPrompts:output_type -> priompt.v1.ListPromptsResponse
-	14, // [14:23] is the sub-list for method output_type
-	5,  // [5:14] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	2,  // 0: priompt.v1.ListBranchesResponse.branches:type_name -> priompt.v1.Branch
+	10, // 1: priompt.v1.ListCommitsResponse.commits:type_name -> priompt.v1.Commit
+	7,  // 2: priompt.v1.ListPromptsResponse.entries:type_name -> priompt.v1.PromptEntry
+	10, // 3: priompt.v1.HistoryResponse.commits:type_name -> priompt.v1.Commit
+	25, // 4: priompt.v1.DiffPromptResponse.changes:type_name -> priompt.v1.Change
+	24, // 5: priompt.v1.Change.up:type_name -> priompt.v1.Window
+	24, // 6: priompt.v1.Change.down:type_name -> priompt.v1.Window
+	18, // 7: priompt.v1.PromptService.GetPrompt:input_type -> priompt.v1.GetPromptRequest
+	22, // 8: priompt.v1.PromptService.DiffPrompt:input_type -> priompt.v1.DiffPromptRequest
+	20, // 9: priompt.v1.PromptService.PublishPrompt:input_type -> priompt.v1.PublishPromptRequest
+	11, // 10: priompt.v1.PromptService.History:input_type -> priompt.v1.HistoryRequest
+	13, // 11: priompt.v1.PromptService.CreateBranch:input_type -> priompt.v1.CreateBranchRequest
+	15, // 12: priompt.v1.PromptService.MergeBranch:input_type -> priompt.v1.MergeBranchRequest
+	17, // 13: priompt.v1.PromptService.DiffCommits:input_type -> priompt.v1.DiffCommitsRequest
+	8,  // 14: priompt.v1.PromptService.SetBranch:input_type -> priompt.v1.SetBranchRequest
+	5,  // 15: priompt.v1.PromptService.ListPrompts:input_type -> priompt.v1.ListPromptsRequest
+	0,  // 16: priompt.v1.PromptService.ListBranches:input_type -> priompt.v1.ListBranchesRequest
+	3,  // 17: priompt.v1.PromptService.ListCommits:input_type -> priompt.v1.ListCommitsRequest
+	19, // 18: priompt.v1.PromptService.GetPrompt:output_type -> priompt.v1.GetPromptResponse
+	23, // 19: priompt.v1.PromptService.DiffPrompt:output_type -> priompt.v1.DiffPromptResponse
+	21, // 20: priompt.v1.PromptService.PublishPrompt:output_type -> priompt.v1.PublishPromptResponse
+	12, // 21: priompt.v1.PromptService.History:output_type -> priompt.v1.HistoryResponse
+	14, // 22: priompt.v1.PromptService.CreateBranch:output_type -> priompt.v1.CreateBranchResponse
+	16, // 23: priompt.v1.PromptService.MergeBranch:output_type -> priompt.v1.MergeBranchResponse
+	23, // 24: priompt.v1.PromptService.DiffCommits:output_type -> priompt.v1.DiffPromptResponse
+	9,  // 25: priompt.v1.PromptService.SetBranch:output_type -> priompt.v1.SetBranchResponse
+	6,  // 26: priompt.v1.PromptService.ListPrompts:output_type -> priompt.v1.ListPromptsResponse
+	1,  // 27: priompt.v1.PromptService.ListBranches:output_type -> priompt.v1.ListBranchesResponse
+	4,  // 28: priompt.v1.PromptService.ListCommits:output_type -> priompt.v1.ListCommitsResponse
+	18, // [18:29] is the sub-list for method output_type
+	7,  // [7:18] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_priompt_v1_prompt_proto_init() }
@@ -1449,7 +1702,7 @@ func file_priompt_v1_prompt_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_priompt_v1_prompt_proto_rawDesc), len(file_priompt_v1_prompt_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   21,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
