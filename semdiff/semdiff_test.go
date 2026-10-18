@@ -226,3 +226,27 @@ func TestEmptySideIsMaximumDelta(t *testing.T) {
 		t.Errorf("whitespace-only side = %v (err %v), want 1", d, err)
 	}
 }
+
+// Editing the last line of a template with no trailing newline is one replace
+// hunk. The LCS walk used to run off the end of one side mid-hunk and close the
+// hunk early, so the rest came out as a separate trailing hunk: a delete plus an
+// insert, each with an empty side (point delta 1), instead of one replace.
+func TestEditAtEndIsOneReplace(t *testing.T) {
+	cases := map[string]struct {
+		old, new []string
+		want     Change
+	}{
+		"edit last line":        {lines("keep one\nkeep two\nold last"), lines("keep one\nkeep two\nnew last"), Change{2, 3, 2, 3}},
+		"edit only line":        {lines("old"), lines("new"), Change{0, 1, 0, 1}},
+		"last line becomes two": {lines("keep one\nold last"), lines("keep one\nnew a\nnew b"), Change{1, 2, 1, 3}},
+		"last two become one":   {lines("keep one\nold a\nold b"), lines("keep one\nnew last"), Change{1, 3, 1, 2}},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := changes(c.old, c.new)
+			if len(got) != 1 || got[0] != c.want {
+				t.Fatalf("changes = %+v, want [%+v]", got, c.want)
+			}
+		})
+	}
+}

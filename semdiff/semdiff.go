@@ -249,6 +249,12 @@ func changes(old, new []string) []Change {
 				j++
 			}
 		}
+		// One side ran out mid-hunk: nothing left can match, so the rest of the
+		// other side belongs to this hunk. Without this, editing the last line
+		// came out as a delete plus a separate trailing insert.
+		if i == n || j == m {
+			i, j = n, m
+		}
 		out = append(out, Change{oS, i, nS, j})
 	}
 	if i < n || j < m { // trailing insert or delete
