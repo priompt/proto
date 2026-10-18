@@ -69,7 +69,11 @@ message Commit {
   string parent2 = 4; // set only on merge commits
   string author = 5;
   string message = 6;
-  string created_at = 7; // RFC3339
+  // UTC timestamp in RFC 3339 with variable-length fractional seconds
+  // (Go time.RFC3339Nano: 0-9 digits, trailing zeros trimmed), e.g.
+  // "2026-10-18T04:45:25.5540023Z". Parse with an RFC 3339 parser that accepts
+  // fractional seconds; do not assume a fixed width.
+  string created_at = 7;
 }
 
 message HistoryRequest {

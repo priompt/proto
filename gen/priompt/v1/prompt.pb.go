@@ -267,14 +267,18 @@ func (x *SetBranchResponse) GetVersionHash() string {
 
 // Commit is one node in a prompt's history DAG.
 type Commit struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Hash          string                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
-	VersionHash   string                 `protobuf:"bytes,2,opt,name=version_hash,json=versionHash,proto3" json:"version_hash,omitempty"`
-	Parent        string                 `protobuf:"bytes,3,opt,name=parent,proto3" json:"parent,omitempty"`
-	Parent2       string                 `protobuf:"bytes,4,opt,name=parent2,proto3" json:"parent2,omitempty"` // set only on merge commits
-	Author        string                 `protobuf:"bytes,5,opt,name=author,proto3" json:"author,omitempty"`
-	Message       string                 `protobuf:"bytes,6,opt,name=message,proto3" json:"message,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // RFC3339
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Hash        string                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	VersionHash string                 `protobuf:"bytes,2,opt,name=version_hash,json=versionHash,proto3" json:"version_hash,omitempty"`
+	Parent      string                 `protobuf:"bytes,3,opt,name=parent,proto3" json:"parent,omitempty"`
+	Parent2     string                 `protobuf:"bytes,4,opt,name=parent2,proto3" json:"parent2,omitempty"` // set only on merge commits
+	Author      string                 `protobuf:"bytes,5,opt,name=author,proto3" json:"author,omitempty"`
+	Message     string                 `protobuf:"bytes,6,opt,name=message,proto3" json:"message,omitempty"`
+	// UTC timestamp in RFC 3339 with variable-length fractional seconds
+	// (Go time.RFC3339Nano: 0-9 digits, trailing zeros trimmed), e.g.
+	// "2026-10-18T04:45:25.5540023Z". Parse with an RFC 3339 parser that accepts
+	// fractional seconds; do not assume a fixed width.
+	CreatedAt     string `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
