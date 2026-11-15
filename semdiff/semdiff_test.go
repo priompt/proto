@@ -274,3 +274,34 @@ func TestEmbedderWithNoVectorsErrors(t *testing.T) {
 		}
 	}
 }
+
+// Oversized input is refused before the O(n*m) table is allocated: DiffPrompt
+// needs only a read token, so this bound is what keeps one request from
+// exhausting server memory.
+func TestAnalyzeRefusesOversizedInput(t *testing.T) {
+	small := make([]string, 200)
+	for i := range small {
+		small[i] = "line"
+	}
+	manyLines := make([]string, MaxLines+1)
+	for i := range manyLines {
+		manyLines[i] = "x"
+	}
+	bigLine := []string{strings.Repeat("y", MaxBytes+1)}
+	for name, c := range map[string][2][]string{
+		"too many new lines": {small, manyLines},
+		"too many old lines": {manyLines, small},
+		"too many new bytes": {small, bigLine},
+	} {
+		if _, err := Analyze(LexicalEmbedder{}, c[0], c[1]); !errors.Is(err, ErrTooLarge) {
+			t.Errorf("%s: err = %v, want ErrTooLarge", name, err)
+		}
+	}
+	atLimit := make([]string, MaxLines)
+	for i := range atLimit {
+		atLimit[i] = "z"
+	}
+	if _, err := Analyze(LexicalEmbedder{}, small, atLimit); err != nil {
+		t.Errorf("at the line limit: %v", err)
+	}
+}
