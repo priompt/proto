@@ -2,6 +2,8 @@ package semdiff
 
 import (
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 )
@@ -248,5 +250,27 @@ func TestEditAtEndIsOneReplace(t *testing.T) {
 				t.Fatalf("changes = %+v, want [%+v]", got, c.want)
 			}
 		})
+	}
+}
+
+type fixedEmbedder [][]float32
+
+func (f fixedEmbedder) Embed([]string) ([][]float32, error) { return f, nil }
+
+// An endpoint answering 200 with no vectors must surface an error, not panic.
+func TestEmbedderWithNoVectorsErrors(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(`{"data":[]}`))
+	}))
+	defer srv.Close()
+	old, new := []string{"one alpha", "two beta"}, []string{"one alpha", "two totally different"}
+	for name, emb := range map[string]Embedder{
+		"http":        HTTPEmbedder{URL: srv.URL},
+		"nil":         fixedEmbedder(nil),
+		"emptyVector": fixedEmbedder{{}},
+	} {
+		if _, err := Analyze(emb, old, new); err == nil {
+			t.Errorf("%s: want error, got nil", name)
+		}
 	}
 }
