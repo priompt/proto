@@ -6,15 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 )
 
 // Scheme is the required prefix of every prompt URI.
 const Scheme = "priompt://"
-
-// Slots are written as {name} in the template.
-var placeholderRe = regexp.MustCompile(`\{(\w+)\}`)
 
 // segmentRe is the grammar for one URI path segment: letters, digits, and the
 // separators . _ - are allowed, but a segment may not be empty, may not be "."
@@ -76,13 +74,14 @@ func Template(template string, slots []string) error {
 	if strings.TrimSpace(template) == "" {
 		return errors.New("template is empty")
 	}
-	if err := braces(template); err != nil {
+	used, err := scan(template)
+	if err != nil {
 		return err
 	}
 
 	found := map[string]bool{}
-	for _, m := range placeholderRe.FindAllStringSubmatch(template, -1) {
-		found[m[1]] = true
+	for _, s := range used {
+		found[s] = true
 	}
 	declared := map[string]bool{}
 	for _, s := range slots {
@@ -124,48 +123,62 @@ func Prompt(uri, template string, slots []string) error {
 	return Template(template, slots)
 }
 
-// braces scans for the two placeholder typos that comparing declared against
-// used slots can never catch, because neither produces a placeholder at all.
+// Slots returns the slot names a template uses, in order of first use, with
+// the same rules Template validates against. Clients that derive slots from a
+// template (promptctl, the web UI) should use it rather than a regexp, so that
+// "{{name}}" — a literal "{name}" — is not mistaken for a slot.
+func Slots(template string) ([]string, error) {
+	used, err := scan(template)
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, s := range used {
+		if !slices.Contains(out, s) {
+			out = append(out, s)
+		}
+	}
+	return out, nil
+}
+
+// scan walks a template once and returns the slots it uses. The syntax is
+// Python's str.format, which both SDK READMEs demonstrate:
 //
-//   - {{name}} — the syntax several other template engines use. placeholderRe
-//     matches the inner {name}, so the prompt would validate; but Python's
-//     str.format (what both SDK READMEs demonstrate) reads "{{" as an escaped
-//     literal brace and substitutes nothing. Silent, and only visible as
-//     degraded model output.
-//   - {name    — an unclosed brace is just literal text, so the slot silently
-//     disappears from the template.
-func braces(t string) error {
+//   - {name} is a slot (letters, digits, underscore);
+//   - {{ and }} are a literal { and }, so JSON examples and other literal
+//     braces are written {{"answer": "..."}} and template.format(...) renders
+//     them as single braces;
+//   - any other { or } is a typo and is rejected, because an unclosed {name is
+//     just literal text to a formatter and the slot would silently disappear.
+func scan(t string) ([]string, error) {
+	var slots []string
 	for i := 0; i < len(t); i++ {
-		if t[i] != '{' {
-			continue
-		}
-		if i+1 < len(t) && t[i+1] == '{' {
-			return fmt.Errorf("template uses doubled braces near %q: slots are written {name}; "+
-				"{{name}} is an escaped literal brace to a formatter, not a slot", trunc(t[i:]))
-		}
-		j := i + 1
-		for j < len(t) && isSlotByte(t[j]) {
-			j++
-		}
-		if j >= len(t) || t[j] != '}' || j == i+1 {
-			return fmt.Errorf("template has an unclosed or malformed placeholder near %q", trunc(t[i:]))
-		}
-		i = j
-	}
-	// A closing brace with no opener is equally a typo.
-	for i := 0; i < len(t); i++ {
-		if t[i] != '}' {
-			continue
-		}
-		k := i - 1
-		for k >= 0 && isSlotByte(t[k]) {
-			k--
-		}
-		if k < 0 || t[k] != '{' || k == i-1 {
-			return fmt.Errorf("template has an unmatched %q near %q", "}", trunc(t[max(0, i-8):]))
+		switch t[i] {
+		case '{':
+			if i+1 < len(t) && t[i+1] == '{' {
+				i++ // literal {
+				continue
+			}
+			j := i + 1
+			for j < len(t) && isSlotByte(t[j]) {
+				j++
+			}
+			if j >= len(t) || t[j] != '}' || j == i+1 {
+				return nil, fmt.Errorf("template has an unclosed or malformed placeholder near %q "+
+					"(write {{ for a literal brace)", trunc(t[i:]))
+			}
+			slots = append(slots, t[i+1:j])
+			i = j
+		case '}':
+			if i+1 < len(t) && t[i+1] == '}' {
+				i++ // literal }
+				continue
+			}
+			return nil, fmt.Errorf("template has an unmatched %q near %q (write }} for a literal brace)",
+				"}", trunc(t[max(0, i-8):]))
 		}
 	}
-	return nil
+	return slots, nil
 }
 
 func isSlotByte(b byte) bool {
