@@ -42,7 +42,7 @@ are generation/vendoring steps — one command each, documented below.
 | `gen/` | Go stubs generated from the `.proto` (committed — consumers just import) | server, promptctl |
 | `claims/` | The JWT claims contract (`sub`, `org`, `rw`, `exp`, `iat`, `iss`) between the priompt-auth issuer and the server's verifier | auth (minting), server (verifying) |
 | `validate/` | Prompt well-formedness — the one definition of "valid": non-empty template, every `{placeholder}` declared, every slot used | server (on write *and* serve), promptctl (on commit) |
-| `semdiff/` | The Semantic Propagation Diff engine: LCS hunks, embedding distance at the change, ripple analysis outward — plus the swappable `Embedder` interface (offline lexical fallback, or any OpenAI-compatible endpoint) | server (`DiffPrompt`, publish verdicts), promptctl (`diff`) |
+| `semdiff/` | The Semantic Propagation Diff engine: LCS hunks, embedding distance at the change, ripple analysis outward — plus the swappable `Embedder` interface (offline lexical fallback, or any OpenAI-compatible endpoint). `AnalyzeContext` takes a `context.Context` and uses `ContextEmbedder.EmbedContext` when an embedder provides it (existing `Embedder`s keep working through `Embed`); `HTTPEmbedder` bounds each round-trip with `Timeout` (default 30s) | server (`DiffPrompt`, publish verdicts), promptctl (`diff`) |
 
 Why the engines and not just the schemas? Because a "verdict" only means
 something if everyone computes it the same way: a prompt that promptctl calls
