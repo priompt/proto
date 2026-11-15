@@ -1,6 +1,9 @@
 package validate
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 func TestPrompt(t *testing.T) {
 	ok := func(uri, tmpl string, slots []string) {
@@ -84,12 +87,12 @@ func TestOrg(t *testing.T) {
 	}
 }
 
-// Doubled and unclosed braces both produce a template that passes the
+// Unclosed and stray braces produce a template that passes the
 // declared-vs-used check and then silently fails to interpolate.
 func TestBraceTypos(t *testing.T) {
 	bad := []struct{ tmpl, why string }{
-		{"Hi {{name}}.", "doubled braces — an escaped literal to str.format"},
 		{"Hi {name.", "unclosed placeholder"},
+		{"Hi {name}}.", "a slot followed by a lone } (str.format: Single '}' encountered)"},
 		{"Hi {name, welcome to {org}.", "unclosed then a valid one"},
 		{"Hi {}.", "empty placeholder"},
 		{"Hi {na me}.", "space inside a placeholder"},
@@ -107,5 +110,33 @@ func TestBraceTypos(t *testing.T) {
 	}
 	if err := Template("Hi {name},\nwelcome to {org}.\n", []string{"name", "org"}); err != nil {
 		t.Errorf("valid multi-line template rejected: %v", err)
+	}
+}
+
+// {{ and }} are literal braces, exactly as in Python's str.format, so prompts
+// with JSON examples can be published and template.format(...) still works.
+func TestLiteralBraces(t *testing.T) {
+	cases := []struct {
+		tmpl  string
+		slots []string
+	}{
+		{`Answer {question}. Reply as JSON: {{"answer": "..."}}`, []string{"question"}},
+		{"Use a set like {{1, 2}} for {question}", []string{"question"}},
+		{"Write {{name}} literally", nil},              // a literal "{name}", not a slot
+		{"Braced value: {{{name}}}", []string{"name"}}, // literal {, slot, literal }
+		{"{a}{b} and {a} again", []string{"a", "b"}},
+	}
+	for _, c := range cases {
+		if err := Template(c.tmpl, c.slots); err != nil {
+			t.Errorf("Template(%q, %v) = %v, want valid", c.tmpl, c.slots, err)
+		}
+		got, err := Slots(c.tmpl)
+		if err != nil || !slices.Equal(got, c.slots) {
+			t.Errorf("Slots(%q) = %v, %v; want %v", c.tmpl, got, err, c.slots)
+		}
+	}
+	// A slot hidden inside an escape is not a slot, so declaring it is an error.
+	if err := Template("Write {{name}} literally", []string{"name"}); err == nil {
+		t.Error(`"{{name}}" counted as using slot name`)
 	}
 }
