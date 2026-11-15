@@ -92,8 +92,38 @@ type Result struct {
 	Class   string // "structural" | "localized tweak" | "minor edit"
 }
 
-// Analyze runs the full propagation diff over two versions of a prompt.
+// Input bounds. The line diff is a full LCS table and the propagation windows
+// re-read the text as they grow, so cost rises with lines(old) x lines(new).
+// DiffPrompt needs only a read token, so without a bound one request with a few
+// MB of newlines could allocate gigabytes. Real prompts sit far below these.
+const (
+	MaxLines = 1000      // per version
+	MaxBytes = 256 << 10 // per version
+)
+
+// ErrTooLarge reports a version over MaxLines or MaxBytes. Callers should
+// treat it as "not analyzable", e.g. reject a diff request or classify a
+// publish conservatively, rather than as an embedder failure.
+var ErrTooLarge = fmt.Errorf("semdiff: prompt too large to analyze (limit %d lines, %d bytes per version)", MaxLines, MaxBytes)
+
+func tooLarge(lines []string) bool {
+	if len(lines) > MaxLines {
+		return true
+	}
+	n := 0
+	for _, l := range lines {
+		n += len(l) + 1
+	}
+	return n > MaxBytes
+}
+
+// Analyze runs the full propagation diff over two versions of a prompt. It
+// returns ErrTooLarge, before allocating anything, when either version exceeds
+// MaxLines or MaxBytes.
 func Analyze(emb Embedder, oldLines, newLines []string) ([]Result, error) {
+	if tooLarge(oldLines) || tooLarge(newLines) {
+		return nil, ErrTooLarge
+	}
 	cache := map[string][]float32{} // text -> vector, reused across windows
 	pf := persistFracFor(emb)
 	var out []Result
@@ -218,12 +248,13 @@ func sameLine(a, b string) bool {
 }
 
 // changes returns the diff hunks between two line slices.
-// ponytail: O(n*m) LCS — fine for prompt-sized files, not for huge ones.
+// ponytail: O(n*m) LCS table — bounded by MaxLines (Analyze checks), so at most
+// ~4 MB of int32. A linear-space diff (Myers/Hirschberg) would lift the bound.
 func changes(old, new []string) []Change {
 	n, m := len(old), len(new)
-	dp := make([][]int, n+1)
+	dp := make([][]int32, n+1)
 	for i := range dp {
-		dp[i] = make([]int, m+1)
+		dp[i] = make([]int32, m+1)
 	}
 	for i := n - 1; i >= 0; i-- {
 		for j := m - 1; j >= 0; j-- {
