@@ -304,6 +304,11 @@ func embedOne(emb Embedder, t string, cache map[string][]float32) ([]float32, er
 	if err != nil {
 		return nil, err
 	}
+	// A misbehaving endpoint can answer 200 with no vector; indexing it would
+	// panic and take the whole server down.
+	if len(vs) != 1 || len(vs[0]) == 0 {
+		return nil, fmt.Errorf("embedder returned %d vectors for 1 text", len(vs))
+	}
 	cache[t] = vs[0]
 	return vs[0], nil
 }
@@ -394,8 +399,14 @@ func (e HTTPEmbedder) Embed(texts []string) ([][]float32, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		return nil, err
 	}
+	if len(out.Data) != len(texts) {
+		return nil, fmt.Errorf("embeddings endpoint: got %d vectors for %d texts", len(out.Data), len(texts))
+	}
 	vecs := make([][]float32, len(out.Data))
 	for i, d := range out.Data {
+		if len(d.Embedding) == 0 {
+			return nil, fmt.Errorf("embeddings endpoint: empty vector at index %d", i)
+		}
 		vecs[i] = d.Embedding
 	}
 	return vecs, nil
