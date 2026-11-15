@@ -1,9 +1,13 @@
 package semdiff
 
 import (
+	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func lines(s string) []string { return strings.Split(strings.TrimRight(s, "\n"), "\n") }
@@ -211,18 +215,18 @@ func TestInsertAndDeleteNeverEmbedEmptyText(t *testing.T) {
 
 // An insert is a total shift at the point of change: there was nothing there.
 func TestEmptySideIsMaximumDelta(t *testing.T) {
-	d, err := deltaText(&stubEmbedder{}, "", "some new instruction", map[string][]float32{})
+	d, err := deltaText(context.Background(), &stubEmbedder{}, "", "some new instruction", map[string][]float32{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if d != 1 {
 		t.Errorf("insert point delta = %v, want 1", d)
 	}
-	if d, err = deltaText(&stubEmbedder{}, "gone", "", map[string][]float32{}); err != nil || d != 1 {
+	if d, err = deltaText(context.Background(), &stubEmbedder{}, "gone", "", map[string][]float32{}); err != nil || d != 1 {
 		t.Errorf("delete point delta = %v (err %v), want 1", d, err)
 	}
 	// Whitespace-only counts as empty — it carries no meaning to embed.
-	if d, err = deltaText(&stubEmbedder{}, "   \n  ", "text", map[string][]float32{}); err != nil || d != 1 {
+	if d, err = deltaText(context.Background(), &stubEmbedder{}, "   \n  ", "text", map[string][]float32{}); err != nil || d != 1 {
 		t.Errorf("whitespace-only side = %v (err %v), want 1", d, err)
 	}
 }
@@ -248,5 +252,68 @@ func TestEditAtEndIsOneReplace(t *testing.T) {
 				t.Fatalf("changes = %+v, want [%+v]", got, c.want)
 			}
 		})
+	}
+}
+
+// A hung embeddings endpoint must not block Analyze forever: the call has to
+// return an error once its timeout expires.
+func TestEmbedderTimeout(t *testing.T) {
+	block := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-block // never answers
+	}))
+	defer srv.Close()
+	defer close(block)
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := Analyze(HTTPEmbedder{URL: srv.URL, Timeout: 100 * time.Millisecond}, []string{"a", "b"}, []string{"a", "c"})
+		done <- err
+	}()
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("want a timeout error, got nil")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Embed still blocked after 5s: no timeout")
+	}
+}
+
+// Zero Timeout must still be bounded, not "no timeout".
+func TestEmbedderDefaultTimeout(t *testing.T) {
+	if got := (HTTPEmbedder{}).timeout(); got <= 0 || got > time.Minute {
+		t.Fatalf("default timeout = %v, want a finite value up to 1m", got)
+	}
+}
+
+// Cancelling the caller's context aborts an in-flight embeddings request and
+// AnalyzeContext returns promptly with the cancellation error.
+func TestAnalyzeContextCancellation(t *testing.T) {
+	block := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-block // never answers
+	}))
+	defer srv.Close()
+	defer close(block)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		cancel()
+	}()
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := AnalyzeContext(ctx, HTTPEmbedder{URL: srv.URL, Timeout: time.Minute}, []string{"a", "b"}, []string{"a", "c"})
+		done <- err
+	}()
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("err = %v, want context.Canceled", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("AnalyzeContext did not abort after cancellation")
 	}
 }

@@ -18,6 +18,7 @@ package semdiff
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -25,6 +26,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -67,6 +69,21 @@ type Embedder interface {
 	Embed(texts []string) ([][]float32, error)
 }
 
+// ContextEmbedder is an Embedder that honors request cancellation. The
+// Embedder interface predates contexts and changing it would break every
+// implementation, so cancellation is opt-in: AnalyzeContext uses EmbedContext
+// when available and falls back to Embed otherwise.
+type ContextEmbedder interface {
+	EmbedContext(ctx context.Context, texts []string) ([][]float32, error)
+}
+
+func embedContext(ctx context.Context, emb Embedder, texts []string) ([][]float32, error) {
+	if ce, ok := emb.(ContextEmbedder); ok {
+		return ce.EmbedContext(ctx, texts)
+	}
+	return emb.Embed(texts)
+}
+
 // Change is one diff hunk: old[OldStart:OldEnd] became new[NewStart:NewEnd].
 // Half-open ranges; an empty old range is an insertion, empty new is a deletion.
 type Change struct {
@@ -94,11 +111,17 @@ type Result struct {
 
 // Analyze runs the full propagation diff over two versions of a prompt.
 func Analyze(emb Embedder, oldLines, newLines []string) ([]Result, error) {
+	return AnalyzeContext(context.Background(), emb, oldLines, newLines)
+}
+
+// AnalyzeContext is Analyze bound to a caller context: cancelling ctx aborts
+// in-flight embeddings requests (for embedders that implement ContextEmbedder).
+func AnalyzeContext(ctx context.Context, emb Embedder, oldLines, newLines []string) ([]Result, error) {
 	cache := map[string][]float32{} // text -> vector, reused across windows
 	pf := persistFracFor(emb)
 	var out []Result
 	for _, ch := range changes(oldLines, newLines) {
-		r, err := analyzeChange(emb, oldLines, newLines, ch, cache, pf)
+		r, err := analyzeChange(ctx, emb, oldLines, newLines, ch, cache, pf)
 		if err != nil {
 			return nil, err
 		}
@@ -107,26 +130,26 @@ func Analyze(emb Embedder, oldLines, newLines []string) ([]Result, error) {
 	return out, nil
 }
 
-func analyzeChange(emb Embedder, old, new []string, ch Change, cache map[string][]float32, pf float64) (Result, error) {
+func analyzeChange(ctx context.Context, emb Embedder, old, new []string, ch Change, cache map[string][]float32, pf float64) (Result, error) {
 	core := func() (string, string) {
 		return join(old[ch.OldStart:ch.OldEnd]), join(new[ch.NewStart:ch.NewEnd])
 	}
 	oc, nc := core()
-	s2, err := deltaText(emb, oc, nc, cache)
+	s2, err := deltaText(ctx, emb, oc, nc, cache)
 	if err != nil {
 		return Result{}, err
 	}
 
 	// A window of radius r is the changed region grown by r lines toward the
 	// edge, taken from both files so nearby *other* changes stay inside it.
-	up, err := expand(s2, func(r int) (string, string, bool) {
+	up, err := expand(ctx, s2, func(r int) (string, string, bool) {
 		oS, nS := max(0, ch.OldStart-r), max(0, ch.NewStart-r)
 		return join(old[oS:ch.OldEnd]), join(new[nS:ch.NewEnd]), oS == 0 && nS == 0
 	}, emb, cache)
 	if err != nil {
 		return Result{}, err
 	}
-	down, err := expand(s2, func(r int) (string, string, bool) {
+	down, err := expand(ctx, s2, func(r int) (string, string, bool) {
 		oE, nE := min(len(old), ch.OldEnd+r), min(len(new), ch.NewEnd+r)
 		return join(old[ch.OldStart:oE]), join(new[ch.NewStart:nE]), oE == len(old) && nE == len(new)
 	}, emb, cache)
@@ -140,12 +163,12 @@ func analyzeChange(emb Embedder, old, new []string, ch Change, cache map[string]
 // window returns (oldText, newText, atBoundary) for a given radius.
 type window func(r int) (string, string, bool)
 
-func expand(s2 float64, w window, emb Embedder, cache map[string][]float32) (Direction, error) {
+func expand(ctx context.Context, s2 float64, w window, emb Embedder, cache map[string][]float32) (Direction, error) {
 	prev := s2
 	var d Direction
 	for r := 2; ; r += 2 {
 		oldT, newT, atBoundary := w(r)
-		delta, err := deltaText(emb, oldT, newT, cache)
+		delta, err := deltaText(ctx, emb, oldT, newT, cache)
 		if err != nil {
 			return d, err
 		}
@@ -265,7 +288,7 @@ func changes(old, new []string) []Change {
 
 // --- semantics -------------------------------------------------------------
 
-func deltaText(emb Embedder, a, b string, cache map[string][]float32) (float64, error) {
+func deltaText(ctx context.Context, emb Embedder, a, b string, cache map[string][]float32) (float64, error) {
 	if a == b { // identical context contributes no shift, and no embed call
 		return 0, nil
 	}
@@ -283,11 +306,11 @@ func deltaText(emb Embedder, a, b string, cache map[string][]float32) (float64, 
 	if strings.TrimSpace(a) == "" || strings.TrimSpace(b) == "" {
 		return 1, nil
 	}
-	va, err := embedOne(emb, a, cache)
+	va, err := embedOne(ctx, emb, a, cache)
 	if err != nil {
 		return 0, err
 	}
-	vb, err := embedOne(emb, b, cache)
+	vb, err := embedOne(ctx, emb, b, cache)
 	if err != nil {
 		return 0, err
 	}
@@ -295,12 +318,12 @@ func deltaText(emb Embedder, a, b string, cache map[string][]float32) (float64, 
 	return math.Max(0, math.Min(1, d)), nil // clamp; opposite-meaning vectors cap at 1
 }
 
-func embedOne(emb Embedder, t string, cache map[string][]float32) ([]float32, error) {
+func embedOne(ctx context.Context, emb Embedder, t string, cache map[string][]float32) ([]float32, error) {
 	if v, ok := cache[t]; ok {
 		return v, nil
 	}
 	// ponytail: one text per call; batch via Embed's slice if API round-trips dominate.
-	vs, err := emb.Embed([]string{t})
+	vs, err := embedContext(ctx, emb, []string{t})
 	if err != nil {
 		return nil, err
 	}
@@ -366,11 +389,35 @@ func (e LexicalEmbedder) Embed(texts []string) ([][]float32, error) {
 // their own model — the prompts never leave their infrastructure.
 type HTTPEmbedder struct {
 	URL, Model, APIKey string
+
+	// Timeout bounds one embeddings call, including the response body read.
+	// Zero means defaultEmbedTimeout.
+	Timeout time.Duration
+}
+
+const defaultEmbedTimeout = 30 * time.Second
+
+// embedClient is shared so connections are reused across calls. Per-request
+// deadlines come from the request context, so the client sets none itself.
+var embedClient = &http.Client{}
+
+func (e HTTPEmbedder) timeout() time.Duration {
+	if e.Timeout > 0 {
+		return e.Timeout
+	}
+	return defaultEmbedTimeout
 }
 
 func (e HTTPEmbedder) Embed(texts []string) ([][]float32, error) {
+	return e.EmbedContext(context.Background(), texts)
+}
+
+func (e HTTPEmbedder) EmbedContext(ctx context.Context, texts []string) ([][]float32, error) {
+	ctx, cancel := context.WithTimeout(ctx, e.timeout())
+	defer cancel()
+
 	body, _ := json.Marshal(map[string]any{"model": e.Model, "input": texts})
-	req, err := http.NewRequest("POST", e.URL, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", e.URL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
@@ -378,7 +425,7 @@ func (e HTTPEmbedder) Embed(texts []string) ([][]float32, error) {
 	if e.APIKey != "" {
 		req.Header.Set("Authorization", "Bearer "+e.APIKey)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := embedClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
