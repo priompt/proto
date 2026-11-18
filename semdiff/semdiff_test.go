@@ -1,11 +1,13 @@
 package semdiff
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func lines(s string) []string { return strings.Split(strings.TrimRight(s, "\n"), "\n") }
@@ -213,18 +215,18 @@ func TestInsertAndDeleteNeverEmbedEmptyText(t *testing.T) {
 
 // An insert is a total shift at the point of change: there was nothing there.
 func TestEmptySideIsMaximumDelta(t *testing.T) {
-	d, err := deltaText(&stubEmbedder{}, "", "some new instruction", map[string][]float32{})
+	d, err := deltaText(context.Background(), &stubEmbedder{}, "", "some new instruction", map[string][]float32{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if d != 1 {
 		t.Errorf("insert point delta = %v, want 1", d)
 	}
-	if d, err = deltaText(&stubEmbedder{}, "gone", "", map[string][]float32{}); err != nil || d != 1 {
+	if d, err = deltaText(context.Background(), &stubEmbedder{}, "gone", "", map[string][]float32{}); err != nil || d != 1 {
 		t.Errorf("delete point delta = %v (err %v), want 1", d, err)
 	}
 	// Whitespace-only counts as empty — it carries no meaning to embed.
-	if d, err = deltaText(&stubEmbedder{}, "   \n  ", "text", map[string][]float32{}); err != nil || d != 1 {
+	if d, err = deltaText(context.Background(), &stubEmbedder{}, "   \n  ", "text", map[string][]float32{}); err != nil || d != 1 {
 		t.Errorf("whitespace-only side = %v (err %v), want 1", d, err)
 	}
 }
@@ -303,5 +305,123 @@ func TestAnalyzeRefusesOversizedInput(t *testing.T) {
 	}
 	if _, err := Analyze(LexicalEmbedder{}, small, atLimit); err != nil {
 		t.Errorf("at the line limit: %v", err)
+	}
+}
+
+// An endpoint that accepts the connection and never answers used to block
+// forever: the request went out on http.DefaultClient, which has no timeout.
+func TestHTTPEmbedderTimesOut(t *testing.T) {
+	block := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		<-block // never answers
+	}))
+	defer srv.Close()
+	defer close(block)
+
+	old, new := []string{"alpha one", "beta two"}, []string{"alpha one", "beta three"}
+	done := make(chan error, 1)
+	started := time.Now()
+	go func() {
+		_, err := AnalyzeContext(context.Background(),
+			HTTPEmbedder{URL: srv.URL, Timeout: 200 * time.Millisecond}, old, new)
+		done <- err
+	}()
+
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("want a timeout error, got nil")
+		}
+		if elapsed := time.Since(started); elapsed > 5*time.Second {
+			t.Fatalf("returned after %s; the timeout was not enforced", elapsed)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("AnalyzeContext still blocked after 10s: the embedder timeout is not applied")
+	}
+}
+
+// A caller that only fills in URL/Model must still get a bound, not the old
+// unbounded behaviour.
+func TestHTTPEmbedderDefaultTimeoutIsBounded(t *testing.T) {
+	if DefaultEmbedTimeout <= 0 || DefaultEmbedTimeout > time.Minute {
+		t.Fatalf("DefaultEmbedTimeout = %s, want a bounded default", DefaultEmbedTimeout)
+	}
+}
+
+// Cancelling the caller's context aborts the outbound request.
+func TestAnalyzeContextHonoursCancellation(t *testing.T) {
+	block := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-r.Context().Done(): // the client hung up
+		case <-block:
+		}
+	}))
+	// close(block) must run before srv.Close(), which waits for the handler.
+	defer srv.Close()
+	defer close(block)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	old, new := []string{"alpha one", "beta two"}, []string{"alpha one", "beta three"}
+	done := make(chan error, 1)
+	go func() {
+		_, err := AnalyzeContext(ctx, HTTPEmbedder{URL: srv.URL, Timeout: time.Minute}, old, new)
+		done <- err
+	}()
+	time.Sleep(100 * time.Millisecond) // let the request reach the server
+	cancel()
+
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("err = %v, want context.Canceled", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("AnalyzeContext ignored the cancelled context")
+	}
+}
+
+// A cancelled context is refused before any work, including the path that needs
+// no embedding at all: identical versions used to return (nil, nil) regardless.
+func TestAnalyzeContextRefusesAnAlreadyCancelledContext(t *testing.T) {
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	same := []string{"alpha one", "beta two"}
+	if res, err := AnalyzeContext(cancelled, LexicalEmbedder{}, same, same); !errors.Is(err, context.Canceled) || res != nil {
+		t.Fatalf("identical versions: %v, %v; want context.Canceled", res, err)
+	}
+	// Deleting everything takes deltaText's empty-side shortcut, which embeds
+	// nothing; it must still respect the context.
+	if _, err := AnalyzeContext(cancelled, LexicalEmbedder{}, same, nil); !errors.Is(err, context.Canceled) {
+		t.Fatalf("deleted prompt: err = %v, want context.Canceled", err)
+	}
+}
+
+// A context that is already cancelled must not send anything at all.
+func TestHTTPEmbedderRefusesAnAlreadyCancelledContext(t *testing.T) {
+	calls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { calls++ }))
+	defer srv.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := (HTTPEmbedder{URL: srv.URL}).EmbedContext(ctx, []string{"a"}); !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want context.Canceled", err)
+	}
+	if calls != 0 {
+		t.Fatalf("the endpoint was called %d times", calls)
+	}
+}
+
+// The legacy surface keeps working: Embed and Analyze stay, and an embedder
+// that only implements Embed still runs through AnalyzeContext.
+func TestLegacyEmbedderStillWorks(t *testing.T) {
+	old, new := []string{"alpha one"}, []string{"alpha two"}
+	if _, err := Analyze(LexicalEmbedder{}, old, new); err != nil {
+		t.Fatalf("Analyze: %v", err)
+	}
+	if _, err := AnalyzeContext(context.Background(), fixedEmbedder{{1, 0}}, old, new); err != nil {
+		t.Fatalf("AnalyzeContext with a legacy Embedder: %v", err)
 	}
 }

@@ -18,6 +18,7 @@ package semdiff
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -25,6 +26,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -65,6 +67,23 @@ func persistFracFor(emb Embedder) float64 {
 // default) and HTTPEmbedder (any OpenAI-compatible endpoint).
 type Embedder interface {
 	Embed(texts []string) ([][]float32, error)
+}
+
+// ContextEmbedder is the optional half of Embedder for implementations that can
+// stop when the caller gives up. AnalyzeContext uses it when the embedder has
+// it and falls back to Embed otherwise, so existing implementations keep
+// compiling and working. Same shape as Calibrated above.
+type ContextEmbedder interface {
+	EmbedContext(ctx context.Context, texts []string) ([][]float32, error)
+}
+
+// embedTexts calls the context-aware half when it exists, so a legacy Embedder
+// keeps working through Embed.
+func embedTexts(ctx context.Context, emb Embedder, texts []string) ([][]float32, error) {
+	if c, ok := emb.(ContextEmbedder); ok {
+		return c.EmbedContext(ctx, texts)
+	}
+	return emb.Embed(texts)
 }
 
 // Change is one diff hunk: old[OldStart:OldEnd] became new[NewStart:NewEnd].
@@ -121,6 +140,17 @@ func tooLarge(lines []string) bool {
 // returns ErrTooLarge, before allocating anything, when either version exceeds
 // MaxLines or MaxBytes.
 func Analyze(emb Embedder, oldLines, newLines []string) ([]Result, error) {
+	return AnalyzeContext(context.Background(), emb, oldLines, newLines)
+}
+
+// AnalyzeContext is Analyze with the caller's context. Cancelling it, or
+// letting its deadline pass, stops the work: the embedder sees it, and so does
+// a diff that needs no embedding at all, which would otherwise return a result
+// for a caller that already gave up.
+func AnalyzeContext(ctx context.Context, emb Embedder, oldLines, newLines []string) ([]Result, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if tooLarge(oldLines) || tooLarge(newLines) {
 		return nil, ErrTooLarge
 	}
@@ -128,7 +158,7 @@ func Analyze(emb Embedder, oldLines, newLines []string) ([]Result, error) {
 	pf := persistFracFor(emb)
 	var out []Result
 	for _, ch := range changes(oldLines, newLines) {
-		r, err := analyzeChange(emb, oldLines, newLines, ch, cache, pf)
+		r, err := analyzeChange(ctx, emb, oldLines, newLines, ch, cache, pf)
 		if err != nil {
 			return nil, err
 		}
@@ -137,26 +167,26 @@ func Analyze(emb Embedder, oldLines, newLines []string) ([]Result, error) {
 	return out, nil
 }
 
-func analyzeChange(emb Embedder, old, new []string, ch Change, cache map[string][]float32, pf float64) (Result, error) {
+func analyzeChange(ctx context.Context, emb Embedder, old, new []string, ch Change, cache map[string][]float32, pf float64) (Result, error) {
 	core := func() (string, string) {
 		return join(old[ch.OldStart:ch.OldEnd]), join(new[ch.NewStart:ch.NewEnd])
 	}
 	oc, nc := core()
-	s2, err := deltaText(emb, oc, nc, cache)
+	s2, err := deltaText(ctx, emb, oc, nc, cache)
 	if err != nil {
 		return Result{}, err
 	}
 
 	// A window of radius r is the changed region grown by r lines toward the
 	// edge, taken from both files so nearby *other* changes stay inside it.
-	up, err := expand(s2, func(r int) (string, string, bool) {
+	up, err := expand(ctx, s2, func(r int) (string, string, bool) {
 		oS, nS := max(0, ch.OldStart-r), max(0, ch.NewStart-r)
 		return join(old[oS:ch.OldEnd]), join(new[nS:ch.NewEnd]), oS == 0 && nS == 0
 	}, emb, cache)
 	if err != nil {
 		return Result{}, err
 	}
-	down, err := expand(s2, func(r int) (string, string, bool) {
+	down, err := expand(ctx, s2, func(r int) (string, string, bool) {
 		oE, nE := min(len(old), ch.OldEnd+r), min(len(new), ch.NewEnd+r)
 		return join(old[ch.OldStart:oE]), join(new[ch.NewStart:nE]), oE == len(old) && nE == len(new)
 	}, emb, cache)
@@ -170,12 +200,12 @@ func analyzeChange(emb Embedder, old, new []string, ch Change, cache map[string]
 // window returns (oldText, newText, atBoundary) for a given radius.
 type window func(r int) (string, string, bool)
 
-func expand(s2 float64, w window, emb Embedder, cache map[string][]float32) (Direction, error) {
+func expand(ctx context.Context, s2 float64, w window, emb Embedder, cache map[string][]float32) (Direction, error) {
 	prev := s2
 	var d Direction
 	for r := 2; ; r += 2 {
 		oldT, newT, atBoundary := w(r)
-		delta, err := deltaText(emb, oldT, newT, cache)
+		delta, err := deltaText(ctx, emb, oldT, newT, cache)
 		if err != nil {
 			return d, err
 		}
@@ -296,7 +326,7 @@ func changes(old, new []string) []Change {
 
 // --- semantics -------------------------------------------------------------
 
-func deltaText(emb Embedder, a, b string, cache map[string][]float32) (float64, error) {
+func deltaText(ctx context.Context, emb Embedder, a, b string, cache map[string][]float32) (float64, error) {
 	if a == b { // identical context contributes no shift, and no embed call
 		return 0, nil
 	}
@@ -314,11 +344,11 @@ func deltaText(emb Embedder, a, b string, cache map[string][]float32) (float64, 
 	if strings.TrimSpace(a) == "" || strings.TrimSpace(b) == "" {
 		return 1, nil
 	}
-	va, err := embedOne(emb, a, cache)
+	va, err := embedOne(ctx, emb, a, cache)
 	if err != nil {
 		return 0, err
 	}
-	vb, err := embedOne(emb, b, cache)
+	vb, err := embedOne(ctx, emb, b, cache)
 	if err != nil {
 		return 0, err
 	}
@@ -326,12 +356,12 @@ func deltaText(emb Embedder, a, b string, cache map[string][]float32) (float64, 
 	return math.Max(0, math.Min(1, d)), nil // clamp; opposite-meaning vectors cap at 1
 }
 
-func embedOne(emb Embedder, t string, cache map[string][]float32) ([]float32, error) {
+func embedOne(ctx context.Context, emb Embedder, t string, cache map[string][]float32) ([]float32, error) {
 	if v, ok := cache[t]; ok {
 		return v, nil
 	}
 	// ponytail: one text per call; batch via Embed's slice if API round-trips dominate.
-	vs, err := emb.Embed([]string{t})
+	vs, err := embedTexts(ctx, emb, []string{t})
 	if err != nil {
 		return nil, err
 	}
@@ -378,6 +408,13 @@ type LexicalEmbedder struct{ Dim int }
 func (LexicalEmbedder) PersistFrac() float64 { return 0.40 }
 
 func (e LexicalEmbedder) Embed(texts []string) ([][]float32, error) {
+	return e.EmbedContext(context.Background(), texts)
+}
+
+func (e LexicalEmbedder) EmbedContext(ctx context.Context, texts []string) ([][]float32, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	d := e.Dim
 	if d == 0 {
 		d = 256
@@ -402,11 +439,37 @@ func (e LexicalEmbedder) Embed(texts []string) ([][]float32, error) {
 // their own model — the prompts never leave their infrastructure.
 type HTTPEmbedder struct {
 	URL, Model, APIKey string
+	// Timeout bounds one round-trip when the caller's context has no deadline
+	// of its own; DefaultEmbedTimeout applies when it is unset. The request used
+	// to go out on http.DefaultClient, which has no timeout at all, so a hung
+	// endpoint blocked the call forever.
+	Timeout time.Duration
 }
 
+// DefaultEmbedTimeout bounds an HTTPEmbedder round-trip whose caller passes no
+// deadline. Long enough for a cold model on a busy host, short enough that a
+// stuck proxy is noticed within one request.
+const DefaultEmbedTimeout = 30 * time.Second
+
 func (e HTTPEmbedder) Embed(texts []string) ([][]float32, error) {
+	return e.EmbedContext(context.Background(), texts)
+}
+
+func (e HTTPEmbedder) EmbedContext(ctx context.Context, texts []string) ([][]float32, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	var cancel context.CancelFunc
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		timeout := e.Timeout
+		if timeout <= 0 {
+			timeout = DefaultEmbedTimeout
+		}
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	body, _ := json.Marshal(map[string]any{"model": e.Model, "input": texts})
-	req, err := http.NewRequest("POST", e.URL, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", e.URL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
